@@ -13,6 +13,7 @@ const getTicket = (accountName, password, twoFactorCode, appid) => {
         });
 
         client.on('loggedOn', (details) => {
+            //client.cancelAuthTicket(appid, err => {
             client.setPersona(SteamUser.EPersonaState.Online);
             client.gamesPlayed(appid, true);
             client.getAuthSessionTicket(appid, (err, ticket) => {
@@ -23,6 +24,7 @@ const getTicket = (accountName, password, twoFactorCode, appid) => {
                     ticket,
                 });
             });
+            //})
         });
 
         client.on('error', reject);
