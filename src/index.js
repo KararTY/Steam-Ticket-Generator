@@ -1,8 +1,8 @@
 const SteamUser = require('steam-user');
 const SteamTotp = require('steam-totp');
-const {promisify} = require('util');
+const { promisify } = require('util');
 
-const getTicket = (accountName, password, twoFactorCode, appid) => {
+const getTicket = (accountName, password, twoFactorCode, appid, cancel) => {
     return new Promise((resolve, reject) => {
         const client = new SteamUser();
 
@@ -13,18 +13,17 @@ const getTicket = (accountName, password, twoFactorCode, appid) => {
         });
 
         client.on('loggedOn', (details) => {
-            //client.cancelAuthTicket(appid, err => {
             client.setPersona(SteamUser.EPersonaState.Online);
             client.gamesPlayed(appid, true);
             client.getAuthSessionTicket(appid, (err, ticket) => {
-                if(err) return reject(err);
+                if (err) return reject(err);
 
                 resolve({
                     accountId: details.client_supplied_steamid.low,
                     ticket,
+                    client
                 });
             });
-            //})
         });
 
         client.on('error', reject);
@@ -43,12 +42,13 @@ const getSteamGuardCode = sharedSecret => {
  * @param {string} password
  * @param {string} secondFactor - Steam Guard Code or shared_secret
  * @param {number} appid
+ * @param {boolean} cancel - Cancel active ticket?
  * @return {Promise<{accountId: number, ticket: Buffer}>}
  */
-module.exports = async (accountName, password, secondFactor, appid) => {
-    if(secondFactor.length > 5) {
+module.exports = async (accountName, password, secondFactor, appid, cancel) => {
+    if (secondFactor.length > 5) {
         secondFactor = await getSteamGuardCode(secondFactor);
     }
 
-    return await getTicket(accountName, password, secondFactor, appid);
+    return await getTicket(accountName, password, secondFactor, appid, cancel);
 };
